@@ -1,6 +1,6 @@
 name := "PipelineDescriptionLanguage"
 version := "0.0.1"
-scalaVersion := "2.13.2"
+scalaVersion := "2.13.12"
 
 libraryDependencies ++= Seq(
   "commons-io" % "commons-io" % "2.8.0",
