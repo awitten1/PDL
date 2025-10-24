@@ -7,6 +7,7 @@ import pipedsl.common.Utilities.{degenerify, generic_type_prefix, not_gen_pref}
 
 import scala.collection.mutable
 import scala.language.implicitConversions
+import com.microsoft.z3.IntSort
 
 
 object Constraints
@@ -73,7 +74,7 @@ object Constraints
    }
   }
 
-  def to_z3(ctxt :Z3Context, expr :IntExpr) :Z3ArithExpr = expr match
+  def to_z3(ctxt :Z3Context, expr :IntExpr): Z3ArithExpr[_] = expr match
   {
    case IntConst(v) => ctxt.mkInt(v)
    case IntVar(id) => ctxt.mkIntConst(id.v)
@@ -82,7 +83,7 @@ object Constraints
    //(max a b) = (if (> a b) a b)
    case IntMax(a, b) =>
    val z3a = to_z3(ctxt, a); val z3b = to_z3(ctxt, b)
-    ctxt.mkITE(ctxt.mkGt(z3a, z3b), z3a, z3b).asInstanceOf[Z3ArithExpr]
+    ctxt.mkITE(ctxt.mkGt(z3a, z3b), z3a, z3b).asInstanceOf[Z3ArithExpr[_]]
 
   }
 

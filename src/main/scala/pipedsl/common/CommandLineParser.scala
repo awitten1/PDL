@@ -54,7 +54,8 @@ object CommandLineParser {
           .action((s, c) => c.copy(defaultRegLock = Some(s))),
         arg[File]("<file>...")
           .action((x, c) => c.copy(file = x))
-          .text("pdl files to parse"),
+          .text("pdl files to parse")
+          .required(),
         cmd("parse")
           .text("parses the provided pdl file and prints to the out file\n")
           .action((_, c) => c.copy(mode = "parse")),

@@ -1,12 +1,17 @@
 package pipedsl.passes
 
-import com.microsoft.z3.{AST => Z3AST, BoolExpr => Z3BoolExpr, Context => Z3Context, Expr => Z3Expr}
+import com.microsoft.z3.{AST => Z3AST, BoolExpr => Z3BoolExpr,
+  Context => Z3Context, Expr => Z3Expr,
+  IntExpr => Z3IntExpr, ArithExpr => Z3ArithExpr,
+  IntSort => Z3IntSort
+}
 import pipedsl.common.Syntax
 import pipedsl.common.Syntax.{BoolOp, BoolUOp, CSeq, Command, EVar, EqOp, Expr, ModuleDef, Prog}
 import pipedsl.common.Utilities.mkAnd
 import pipedsl.passes.Passes.ProgPass
 
 import scala.collection.mutable
+import com.microsoft.z3.IntSort
 
 class PredicateGenerator extends ProgPass[Z3Context] {
 
@@ -75,7 +80,7 @@ class PredicateGenerator extends ProgPass[Z3Context] {
     }
   }
 
-  private def abstractInterpExpr(e: Expr): Option[Z3Expr] = e match {
+  private def abstractInterpExpr(e: Expr): Option[Z3Expr[_]] = e match {
     case evar: EVar => Some(declareConstant(evar))
     case Syntax.EInt(v, base, bits) => Some(ctx.mkInt(v))
     case Syntax.EBool(v) => if (v) Some(ctx.mkTrue()) else Some(ctx.mkFalse())
@@ -110,7 +115,7 @@ class PredicateGenerator extends ProgPass[Z3Context] {
     case _ => None
   }
 
-  private def declareConstant(evar: EVar): Z3Expr =
+  private def declareConstant(evar: EVar): Z3Expr[_] =
     evar.typ match {
       case Some(value) => value match {
         case _: Syntax.TSizedInt => ctx.mkIntConst(evar.id.v);

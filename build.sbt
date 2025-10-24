@@ -10,7 +10,7 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %% "pprint" % "0.5.6",
 
   // SMT Solving
-  "io.github.tudo-aqua" % "z3-turnkey" % "4.8.7.1",
+  "tools.aqua" % "z3-turnkey" % "4.14.1",
 
   // Command Line Parsing
   "com.github.scopt" % "scopt_2.13" % "4.0.1",
@@ -27,6 +27,20 @@ libraryDependencies ++= Seq(
 scalacOptions += "-language:implicitConversions"
 
 //Deployment Options
-assemblyJarName in assembly := "pdl.jar"
-test in assembly := {}
-mainClass in assembly := Some("pipedsl.Main")
+assembly / assemblyJarName := "pdl.jar"
+assembly / test := {}
+assembly / mainClass := Some("pipedsl.Main")
+
+
+// Assembly Merge Strategy
+assembly / assemblyMergeStrategy := {
+  case PathList("META-INF", "versions", "9", "module-info.class") => MergeStrategy.discard
+  case PathList("META-INF", xs @ _*) =>
+    xs match {
+      case "MANIFEST.MF" :: Nil => MergeStrategy.discard
+      case _ => MergeStrategy.first
+    }
+  case x =>
+    val oldStrategy = (assembly / assemblyMergeStrategy).value
+    oldStrategy(x)
+}
