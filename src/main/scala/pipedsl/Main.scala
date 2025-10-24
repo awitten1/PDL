@@ -25,7 +25,7 @@ object Main {
         //In case directories don't exist
         config.out.mkdirs()
         (config.mode) match {
-          case ("parse") => parse(debug = true, printOutput = true, config.file, config.out,
+          case ("parse") => parse(debug = true, printOutput = false, config.file, config.out,
             rfLockImpl = config.defaultRegLock)
           case ("interpret") => interpret(config.maxIterations, config.memoryInput, config.file, config.out,
             rfLockImpl = config.defaultRegLock)
@@ -51,6 +51,7 @@ object Main {
     val outputName = FilenameUtils.getBaseName(inputFile.getName) + ".parse"
     val outputFile = new File(Paths.get(outDir.getPath, outputName).toString)
     if (printOutput) new PrettyPrinter(Some(outputFile)).printProgram(prog)
+    else { new PrettyPrinter(None).printProgram(prog) }
     prog
   }
 

@@ -18,7 +18,7 @@ and run the compiler.
 
 
 - Install Java:
- - On Linux: 
+ - On Linux:
  - On Mac: `brew tap AdoptOpenJDK/openjdk && brew cask install adoptopenjdk8`
 - Install Scala and sbt:
  - Install an IDE like [intellij](https://www.jetbrains.com/idea/) and install the scala/sbt plugins (recommended)
@@ -44,7 +44,7 @@ You can also manually build the compiler by running `sbt compile`.
 
 The main class is `pipedsl.Main` and can be run via
 the sbt command `sbt "run pipedsl.Main <args>"`.
-Alternatively, the executable jar can be used by 
+Alternatively, the executable jar can be used by
 running java with the command `java -jar pdl.jar <args>`.
 
 We also provide a script `pdl` in the `bin` directory that

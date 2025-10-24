@@ -1,4 +1,5 @@
 *~
+.metals/
 *.log
 *.aux
 *.pdf
