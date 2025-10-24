@@ -32,15 +32,17 @@ assembly / test := {}
 assembly / mainClass := Some("pipedsl.Main")
 
 
-// Assembly Merge Strategy
+// Without this I'm getting errors:
+// [error] java.lang.RuntimeException: deduplicate: different file contents found in the following:
+// [error] jspecify-1.0.0.jar:META-INF/versions/9/module-info.class
+// [error] turnkey-support-1.0.0.jar:META-INF/versions/9/module-info.class
+// [error] 4.14.1/z3-turnkey-4.14.1.jar:META-INF/versions/9/module-info.class
 assembly / assemblyMergeStrategy := {
   case PathList("META-INF", "versions", "9", "module-info.class") => MergeStrategy.discard
   case PathList("META-INF", xs @ _*) =>
     xs match {
       case "MANIFEST.MF" :: Nil => MergeStrategy.discard
-      case _ => MergeStrategy.first
+      case _ => MergeStrategy.deduplicate
     }
-  case x =>
-    val oldStrategy = (assembly / assemblyMergeStrategy).value
-    oldStrategy(x)
+  case x => MergeStrategy.deduplicate
 }
