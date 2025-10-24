@@ -37,10 +37,10 @@ object Main {
           case _ =>
         }
       }
-      case _ => 
+      case _ =>
     }
   }
-  
+
   def parse(debug: Boolean, printOutput: Boolean, inputFile: File, outDir: File,
             rfLockImpl: Option[String] = None): Prog = {
     if (!Files.exists(inputFile.toPath)) {
@@ -53,7 +53,7 @@ object Main {
     if (printOutput) new PrettyPrinter(Some(outputFile)).printProgram(prog)
     prog
   }
-  
+
   def interpret(maxIterations:Int, memoryInputs: Seq[String], inputFile: File, outDir: File,
                 rfLockImpl: Option[String] = None): Unit = {
     val outputName = FilenameUtils.getBaseName(inputFile.getName) + ".interpret"
@@ -62,7 +62,7 @@ object Main {
     val i: Interpreter = new Interpreter(maxIterations)
     i.interp_prog(RemoveTimingPass.run(prog), MemoryInputParser.parse(memoryInputs), outputFile)
   }
-  
+
   def runPasses(printOutput: Boolean, inputFile: File, outDir: File, port_warn :Boolean,
       autocast: Boolean, rfLockImpl: Option[String] = None): (Prog, ProgInfo) = {
     if (!Files.exists(inputFile.toPath)) {
@@ -122,7 +122,7 @@ object Main {
         }
         throw t
       }
-    } 
+    }
   }
 
   def getStageInfo(prog: Prog, printStgGraph: Boolean): Map[Id, List[PStage]] = {
@@ -148,7 +148,7 @@ object Main {
       n -> newstgs
     }
   }
-  
+
   def gen(outDir: File, inputFile: File, printStgInfo: Boolean = false, debug: Boolean = false,
     memInit: Map[String, String],  portWarn: Boolean = false, autocast: Boolean, rfLockImpl: Option[String] = None,
           printTimer: Boolean = false): Unit = {

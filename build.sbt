@@ -1,6 +1,6 @@
 name := "PipelineDescriptionLanguage"
 version := "0.0.1"
-scalaVersion := "2.13.12"
+scalaVersion := "2.13.17"
 
 libraryDependencies ++= Seq(
   "commons-io" % "commons-io" % "2.8.0",
@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
   "io.github.tudo-aqua" % "z3-turnkey" % "4.8.7.1",
 
   // Command Line Parsing
-  "com.github.scopt" % "scopt_2.13" % "4.0.0-RC2",
+  "com.github.scopt" % "scopt_2.13" % "4.0.1",
 
   // Logging
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",

@@ -5,7 +5,7 @@ import java.io.File
 import scopt.OParser
 
 object CommandLineParser {
-  
+
   case class Config(
     out: File = new File("."),
     debug: Boolean = false,
@@ -84,7 +84,7 @@ object CommandLineParser {
               .text("Add execution timer in generated testbench circuit")
               .action((_, c) => c.copy(printTimer = true))
           ),
-        cmd("typecheck") 
+        cmd("typecheck")
           .text("parses and type checks the resulting AST")
           .action((_, c) => c.copy(mode = "typecheck"))
       )
