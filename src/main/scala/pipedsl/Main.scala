@@ -48,10 +48,21 @@ object Main {
     }
     val p: Parser = new Parser(rflockImpl = rfLockImpl.getOrElse("RenameRF"))
     val prog = p.parseCode(new String(Files.readAllBytes(inputFile.toPath)))
+    for (moddef <- prog.moddefs) {
+      println("-----")
+      println(moddef.name)
+      for (input <- moddef.inputs) {
+        println(s"input $input")
+      }
+      for (module <- moddef.modules) {
+        println(s"module $module")
+      }
+    }
+
     val outputName = FilenameUtils.getBaseName(inputFile.getName) + ".parse"
     val outputFile = new File(Paths.get(outDir.getPath, outputName).toString)
     if (printOutput) new PrettyPrinter(Some(outputFile)).printProgram(prog)
-    else { new PrettyPrinter(None).printProgram(prog) }
+    //else { new PrettyPrinter(None).printProgram(prog) }
     prog
   }
 
