@@ -1,3 +1,7 @@
+// This program is an example of a program that does not
+// parse.  That is because all defs need to become before all pipes.
+// mul4 comes after a pipe declaration.
+
 def mul(arg1: int<32>, arg2: int<32>, op: uint<3>): int<32> {
     uint<32> mag1 = cast(mag(arg1), uint<32>);
     uint<32> mag2 = cast(mag(arg2), uint<32>);
@@ -13,6 +17,23 @@ def mul(arg1: int<32>, arg2: int<32>, op: uint<3>): int<32> {
      	return m{63:32};
     }
 }
+
+def mul3(arg1: int<32>, arg2: int<32>, op: uint<3>): int<32> {
+    uint<32> mag1 = cast(mag(arg1), uint<32>);
+    uint<32> mag2 = cast(mag(arg2), uint<32>);
+    //MULHU => positive sign always
+    int<32> s1 = (op == u3<3>) ? 1<32> : sign(arg1);
+    //MULHU/MULHSU => positive sign always
+    int<32> s2 = (op >= u2<3>) ? 1<32> : sign(arg2);
+    int<64> magRes = cast((mag1 * mag2), int<64>);
+    int<64> m = (s1 == s2) ? (magRes) : -(magRes);
+    if (op == u0<3>) { //MUL
+      	return m{31:0};
+    } else {
+     	return m{63:32};
+    }
+}
+
 
 def alu(arg1: int<32>, arg2: int<32>, op: uint<3>, flip: bool): int<32> {
     uint<5> shamt = cast(arg2{4:0}, uint<5>);
@@ -52,33 +73,31 @@ def alu(arg1: int<32>, arg2: int<32>, op: uint<3>, flip: bool): int<32> {
 
 }
 
-def br(pc: int<16>, off:int<16>, op:uint<3>, arg1:int<32>, arg2:int<32>): int<16> {
-    //divide by 4 b/c we count instructions not bytes
-    int<16> offpc = pc + (off >> 2);
-    int<16> npc = pc + 1<16>;
+//true if taking branch
+def br(op:uint<3>, arg1:int<32>, arg2:int<32>): bool {
     if (op == u0<3>) { //BEQ
-        if (arg1 == arg2) { return offpc; } else { return npc; }
+        return (arg1 == arg2);
     } else {
     if (op == u1<3>) { //BNE
-       if (arg1 != arg2)  { return offpc; } else { return npc; }
+       return (arg1 != arg2);
     } else {
     if (op == u4<3>) { //BLT
-       if (arg1 < arg2)  { return offpc; } else { return npc; }
+       return (arg1 < arg2);
     } else {
     if (op == u5<3>) { //BGE
-       if (arg1 >= arg2)  { return offpc; } else { return npc; }
+       return (arg1 >= arg2);
     } else {
     if (op == u6<3>) { //BLTU
         uint<32> un1 = cast(arg1, uint<32>);
         uint<32> un2 = cast(arg2, uint<32>);
-        if (un1 < un2)  { return offpc; } else { return npc; }
+        return (un1 < un2);
     } else {
     if (op == u7<3>) { //BGEU
         uint<32> un1 = cast(arg1, uint<32>);
         uint<32> un2 = cast(arg2, uint<32>);
-        if (un1 >= un2) { return offpc; } else { return npc; }
+        return(un1 >= un2);
     } else {
-      return npc;
+      return false;
     }}}}}}
 }
 
@@ -128,18 +147,38 @@ pipe multi_stg_div(num: uint<32>, denom: uint<32>, quot: uint<32>, acc: uint<32>
     uint<32> na = (tmp >= denom) ? (tmp - denom) : (tmp);
     uint<32> nq = (tmp >= denom) ? ((quot << 1){31:1} ++ u1<1>) : (quot << 1);
     uint<32> nnum = num << 1;
-    if (cnt == u31<5>) {
+    bool done = (cnt == u31<5>);
+    if (done) {
         output( (retQuot) ? nq : na );
     } else {
         call multi_stg_div(nnum, denom, nq, na, cnt + u1<5>, retQuot);
     }
 }
 
+def mul4(arg1: int<32>, arg2: int<32>, op: uint<3>): int<32> {
+    uint<32> mag1 = cast(mag(arg1), uint<32>);
+    uint<32> mag2 = cast(mag(arg2), uint<32>);
+    //MULHU => positive sign always
+    int<32> s1 = (op == u3<3>) ? 1<32> : sign(arg1);
+    //MULHU/MULHSU => positive sign always
+    int<32> s2 = (op >= u2<3>) ? 1<32> : sign(arg2);
+    int<64> magRes = cast((mag1 * mag2), int<64>);
+    int<64> m = (s1 == s2) ? (magRes) : -(magRes);
+    if (op == u0<3>) { //MUL
+      	return m{31:0};
+    } else {
+     	return m{63:32};
+    }
+}
 
-pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(FAQueue), imem: int<32>[16]<a,a>, dmem: int<32>[16]<a,a>, div: multi_stg_div]: bool {
+
+pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(BypassQueue), imem: int<32>[16]<a,a>(Queue), dmem: int<32>[16]<a,a>, div: multi_stg_div]: bool {
+    spec_check();
     start(imem);
-    int<32> insn <- imem[cast(pc, uint<16>)];
+    uint<16> pcaddr = cast(pc, uint<16>);
+    int<32> insn <- imem<a>[pcaddr];
     end(imem);
+    s <- speccall cpu(pc + 1<16>);
     ---
     //This OPCODE is J Self and thus we're using it to signal termination
     bool done = insn == 0x0000006f<32>;
@@ -159,6 +198,7 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(FAQueue), imem: int<32>[16]<a,a>, dme
     int<12> immJRTmp = insn{31:20};
     int<16> immJR = cast(immJRTmp, int<16>);
     int<32> immU = insn{31:12} ++ 0<12>;
+    uint<3> doAdd = u0<3>;
     bool isOpImm = opcode == 0b0010011<7>;
     bool flip = (!isOpImm) && (flipBit == 1<1>);
     bool isLui   = opcode == 0b0110111<7>;
@@ -171,27 +211,37 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(FAQueue), imem: int<32>[16]<a,a>, dme
     bool isLoad = opcode == 0b0000011<7>;
     bool isMDiv = (funct7 == u1<7>) && isOp;
     bool isDiv = isMDiv && (funct3 >= u4<3>);
+    bool isMul = isMDiv && (funct3 < u4<3>);
     bool needrs1 = !isJal;
     bool needrs2 = isOp || isBranch || isStore || isJalr;
     bool writerd = (rd != u0<5>) && (isOp || isOpImm || isLoad || isJal || isJalr || isLui || isAui);
+    spec_barrier();
+    bool notBranch = (!isBranch) && (!isJal) && (!isJalr);
+    if ((!done) && (notBranch)) {
+       	  verify(s, pc + 1<16>);
+    } else {
+       invalidate(s);
+    }
     start(rf);
     if (needrs1) {
        int<32> rf1 = rf<a>[rs1];
     } else {
-      int<32> rf1 = 0<32>;
+       int<32> rf1 = 0<32>;
     }
     if (needrs2) {
        int<32> rf2 = rf<a>[rs2];
     } else {
-       int<32> rf2 = 0<32>;
+      int<32> rf2 = 0<32>;
     }
     if (writerd) {
-       reserve(rf[rd]);
+       reserve(rf[rd], W);
     }
     end(rf);
-    ---
+    bool take = br(funct3, rf1, rf2);
     if (isBranch) {
-       int<16> npc = br(pc, immB, funct3, rf1, rf2);
+       //divide by 4 b/c we count instructions not bytes
+       int<16> offpc = pc + (immB >> 2);
+       int<16> npc = (take) ? (offpc) : (pc + 1<16>);
     } else {
     if (isJal) {
        //divide by 4 since it counts bytes instead of insns
@@ -203,67 +253,47 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(FAQueue), imem: int<32>[16]<a,a>, dme
     } else {
        int<16> npc = pc + 1<16>;
     }}}
-    if (!done) { call cpu(npc); }
 
-    int<32> alu_arg2 = (isOpImm) ? immI : rf2;
-
+    if (!done) {
+       if (!notBranch) {
+       	  call cpu(npc);
+       }
+    }
+    int<32> alu_arg1 = (isAui) ? ((0<16> ++ pc) << 2) : rf1;
+    int<32> alu_arg2 = (isAui) ? immU : ((isStore) ? immS : ((isOpImm || isLoad) ? immI : rf2));
+    bool    alu_flip = (isStore || isLoad || isAui) ? false : flip;
+    uint<3> alu_funct3 = (isStore || isLoad || isAui) ? doAdd : funct3;
+    int<32> alu_res = alu(alu_arg1, alu_arg2, alu_funct3, alu_flip);
+    int<16> tmppc = pc + 1<16>;
+    int<32> linkpc = 0<16> ++ (tmppc << 2);
+    int<32> mulres = mul(rf1, rf2, funct3);
+    ---
+    if (writerd && (!isLoad) && (!isDiv)) {
+       block(rf[rd]);
+       int<32> rddata = (isLui) ? immU : ((isMul) ? mulres : ((isJal || isJalr) ? linkpc : alu_res));
+       rf[rd] <- rddata;
+    } else {
+       int<32> rddata = 0<32>;
+    }
     if (isDiv) {
        int<32> sdividend = sign(rf1);
        //For REM, ignore sign of divisor
        int<32> sdivisor  = (funct3 == u6<3>) ? 1<32> : sign(rf2);
        bool isSignedDiv = ((funct3 == u4<3>) || (funct3 == u6<3>));
-       bool invertRes = isSignedDiv && (sdividend != sdivisor);
        uint<32> dividend = (isSignedDiv) ? cast(mag(rf1), uint<32>) : cast(rf1, uint<32>);
        uint<32> divisor =  (isSignedDiv) ? cast(mag(rf2), uint<32>) : cast(rf2, uint<32>);
        bool retQuot = funct3 <= u5<3>;
+       bool invertRes <- isSignedDiv && (sdividend != sdivisor);
        uint<32> udivout <- call div(dividend, divisor, u0<32>, u0<32>, u0<5>, retQuot);
-    } else {
+   } else {
+       bool invertRes <- false;
        uint<32> udivout <- u0<32>;
-       bool invertRes = false;
-    }
-    ---
-    split {
-    	  case: (isLui) {
-	  	int<32> alu_res = immU;
-	  }
-	  case: (isAui) {
-	  //all pc computation needs to be multiplied by 4
-	  	int<32> pc32 = (0<16> ++ pc) << 2;
-	  	int<32> alu_res = pc32 + immU;
-	  }
-	  case: (isDiv) {
-	       int<32> alu_res = (invertRes) ? -(cast(udivout, int<32>)) :  cast(udivout, int<32>);
-	  }
- 	  case: (isMDiv) {
-	  	int<32> alu_res = mul(rf1, rf2, funct3);
-	  }
-	  default: {
-	        int<32> alu_res = alu(rf1, alu_arg2, funct3, flip);
-	  }
-    }
-    split {
-    	  case: (isStore) {
-	  	//addresses also are word-sized
-		int<32> tmp = immS + rf1;
-		uint<32> ctmp = cast(tmp, uint<32>);
-		uint<16> memaddr = (ctmp >> 2){15:0};
-		uint<2> boff = ctmp{1:0};
-	  }
-	  case: (isLoad) {
-	  	//addresses also are word-sized
-		int<32> tmp = immI + rf1;
-		uint<32> ctmp = cast(tmp, uint<32>);
-		uint<16> memaddr = (ctmp >> 2){15:0};
-		uint<2> boff = ctmp{1:0};
-	  }
-	  default: {
-  	  	uint<16> memaddr = u0<16>;
-		uint<2> boff = u0<2>;
-	  }
-    }
-    ---
-    start(dmem);
-    split {
+   }
+   uint<32> tmpaddr = cast(alu_res, uint<32>);
+   uint<16> memaddr = (tmpaddr >> 2){15:0};
+   uint<2> boff = cast(alu_res{1:0}, uint<2>);
+   start(dmem);
+   split {
         case: (isLoad) {
 	   uint<16> raddr = memaddr;
 	   int<32> wdata <- dmem[raddr];
@@ -284,20 +314,20 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(FAQueue), imem: int<32>[16]<a,a>, dme
     ---
     print("PC: %h", pc << 2);
     print("INSN: %h", insn);
-    if (writerd) {
+    if ((writerd) && (isLoad || isDiv)) {
        block(rf[rd]);
        if (isLoad) {
        	  int<32> insnout = maskLoad(wdata, funct3, boff);
        } else {
-       if (isJal || isJalr) {
-       	  //need to multiply by 4 b/c it is arch visible.
-	  int<16> nextpc = pc + 1<16>;
-	  int<32> insnout =  0<16> ++ (nextpc << 2); //todo make pc 32 bits
-       } else {
-       	 int<32> insnout = alu_res;
-       }}
-       print("Writing %d to r%d", insnout, rd);
+	  int<32> divout = (invertRes) ? -(cast(udivout, int<32>)) :  cast(udivout, int<32>);
+	  int<32> insnout = divout;
+       }
        rf[rd] <- insnout;
+    } else {
+      int<32> insnout = rddata;
+    }
+    if (writerd) {
+       print("Writing %d to r%d", insnout, rd);
        release(rf[rd]);
     }
     if (done) { output(true); }
@@ -305,10 +335,12 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(FAQueue), imem: int<32>[16]<a,a>, dme
 
 circuit {
     ti = memory(int<32>, 16);
-     td = memory(int<32>, 16);
+    i = Queue(ti);
+    td = memory(int<32>, 16);
     rf = regfile(int<32>, 5);
-    r = FAQueue(rf);
+//    r = rflock ForwardRenameRF(int<32>, 5, 64);
+    r = BypassQueue(rf);
     div = new multi_stg_div[];
-    c = new cpu[r, ti, td, div];
+    c = new cpu[r, i, td, div];
     call c(0<16>);
 }

@@ -193,7 +193,7 @@ class Parser(rflockImpl: String) extends RegexParsers with PackratParsers {
       recAccess |
       recLiteral |
       num |
-      stringVal | 
+      stringVal |
       boolean ^^ (b => EBool(b)) |
       iden ~ parens(repsep(expr, ",")) ^^ { case f ~ args => EApp(f, args) } |
       variable  |
@@ -253,7 +253,7 @@ class Parser(rflockImpl: String) extends RegexParsers with PackratParsers {
   lazy val nontern: Parser[Expr] = positioned(binConcat)
   lazy val expr :Parser[Expr] = ternary | nontern
 
-     
+
   lazy val lhs: Parser[Expr] = memAccess | variable
 
   lazy val simpleCmd: P[Command] = positioned {
@@ -273,8 +273,8 @@ class Parser(rflockImpl: String) extends RegexParsers with PackratParsers {
       "output" ~> expr ^^ (e => { COutput(e)}) |
       expr ^^ (e => { CExpr(e)})
   }
-  
-  lazy val lockArg: P[LockArg] = positioned { 
+
+  lazy val lockArg: P[LockArg] = positioned {
     iden ~ brackets(variable).? ^^ {case i ~ v => LockArg(i, v)}
   }
 

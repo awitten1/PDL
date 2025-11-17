@@ -6,7 +6,7 @@ libraryDependencies ++= Seq(
   "commons-io" % "commons-io" % "2.8.0",
 
   // Parsing & Pretty Printing
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
   "com.lihaoyi" %% "pprint" % "0.5.6",
 
   // SMT Solving
