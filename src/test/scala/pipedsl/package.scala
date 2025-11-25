@@ -43,6 +43,17 @@ package object pipedsl {
     assert(success)
   }
 
+  def testParse(programText: String): Unit = {
+    val p: Parser = new Parser(rflockImpl = "RenameRF")
+    var success = true
+    try {
+      p.parseCode(programText)
+    } catch {
+      case _: Exception => success = false
+    }
+    assert(success)
+  }
+
   def testTypecheck(testDir: File, inputFile: File, autocast :Boolean = false): Boolean = {
     var doesTypecheck: Boolean = false
     try {

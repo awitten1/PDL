@@ -27,6 +27,122 @@ class MainSuite extends AnyFunSuite {
       new File(histFile))
   }*/
 
+  test("Parser test") {
+    testParse("""
+pipe cpu(pc: int<8>)[rf: int<32>[5]<c4,s1>(RenameRF), imem: int<32>[8]<a1,a1>]: bool {
+     start(imem);
+     int<32> insn <- imem[cast(pc, uint<8>)];
+     end(imem);
+     ---
+     if (insn{31:31} != 1<1>) {
+     	  ---
+          int<1> op = insn{0:0};
+     	  int<8> brImm = 0<4> ++ insn{4:1};
+     	  uint<5> rs1 = cast(insn{9:5}, uint<5>);
+     	  uint<5> rs2 = cast(insn{14:10}, uint<5>);
+     	  uint<5> rd = cast(insn{19:15}, uint<5>);
+
+     	  if (op == 0<1>) {
+     	    call cpu(pc + 1<8>);
+     	  }
+     	  start(rf);
+     	  reserve(rf[rs1], R);
+     	  reserve(rf[rs2], R);
+     	  if (op == 0<1>) {
+     	     reserve(rf[rd], W);
+     	  }
+     	  end(rf);
+     	  ---
+     	  block(rf[rs1]);
+     	  block(rf[rs2]);
+     	  if (op != 0<1>) {
+       	     int<8> npc = (rf[rs1] == rf[rs2]) ? (pc + brImm) : (pc + 1<8>);
+	     print(npc);
+	     call cpu(npc);
+     	  }
+     	  int<32> out = rf[rs1] + rf[rs2];
+     	  release(rf[rs1]);
+     	  release(rf[rs2]);
+    	  ---
+     	  if (op == 0<1>) {
+             block(rf[rd]);
+	     print(out);
+             rf[rd] <- out;
+             release(rf[rd]);
+     	  }
+     } else {
+       output(true);
+     }
+}
+
+circuit {
+   rename = rflock(int<32>, 5, 128);
+   ti = memory(int<32>, 8);
+   t = new cpu[rename,ti];
+   call t(0<8>);
+}
+
+    """.stripMargin)
+  }
+
+  test("Parser test with IFC labels") {
+    testParse("""
+pipe cpu(pc: int<8>)[rf: int<32>[5]<c4,s1>(RenameRF), imem: int<32>[8]<a1,a1>]: bool {
+     start(imem);
+     int<32> insn <- imem[cast(pc, uint<8>)];
+     end(imem);
+     ---
+     if (insn{31:31} != 1<1>) {
+     	  ---
+          int<1> op = insn{0:0};
+     	  int<8> brImm = 0<4> ++ insn{4:1};
+     	  uint<5> rs1 = cast(insn{9:5}, uint<5>);
+     	  uint<5> rs2 = cast(insn{14:10}, uint<5>);
+     	  uint<5> rd = cast(insn{19:15}, uint<5>);
+
+     	  if (op == 0<1>) {
+     	    call cpu(pc + 1<8>);
+     	  }
+     	  start(rf);
+     	  reserve(rf[rs1], R);
+     	  reserve(rf[rs2], R);
+     	  if (op == 0<1>) {
+     	     reserve(rf[rd], W);
+     	  }
+     	  end(rf);
+     	  ---
+     	  block(rf[rs1]);
+     	  block(rf[rs2]);
+     	  if (op != 0<1>) {
+       	     int<8> npc = (rf[rs1] == rf[rs2]) ? (pc + brImm) : (pc + 1<8>);
+	     print(npc);
+	     call cpu(npc);
+     	  }
+     	  int<32> out = rf[rs1] + rf[rs2];
+     	  release(rf[rs1]);
+     	  release(rf[rs2]);
+    	  ---
+     	  if (op == 0<1>) {
+             block(rf[rd]);
+	     print(out);
+             rf[rd] <- out;
+             release(rf[rd]);
+     	  }
+     } else {
+       output(true);
+     }
+}
+
+circuit {
+   rename = rflock(int<32>, 5, 128);
+   ti = memory(int<32>, 8);
+   t = new cpu[rename,ti];
+   call t(0<8>);
+}
+
+    """.stripMargin)
+  }
+
   test("Histogram Typecheck Test") {
     testTypecheck(new File(histFolder),
       new File(histFile))
@@ -39,7 +155,7 @@ class MainSuite extends AnyFunSuite {
       inputMap
     )
   }
-  
+
   test("Histogram Simulation Test") {
     testBlueSpecSim(new File(histFolder),
       new File(histFile),
@@ -158,7 +274,7 @@ class MainSuite extends AnyFunSuite {
     testParse(new File(matpowFolder),
       new File(matpowFile))
   }*/
-  
+
   test("Matrix Power Typecheck Test") {
     testTypecheck(new File(matpowFolder),
       new File(matpowFile))
@@ -171,7 +287,7 @@ class MainSuite extends AnyFunSuite {
       matpowMap
     )
   }
-  
+
   test("Matrix Power Simulation Test") {
     testBlueSpecSim(new File(matpowFolder),
       new File(matpowFile),
@@ -249,7 +365,7 @@ class MainSuite extends AnyFunSuite {
     testParse(new File(multiFolder),
       new File(multiFile))
   }  */
-  
+
   test("Multiple Execution Typecheck Test") {
     testTypecheck(new File(multiFolder),
       new File(multiFile))
@@ -262,7 +378,7 @@ class MainSuite extends AnyFunSuite {
       memMap
     )
   }
-  
+
   test("Multiple Execution Simulation Test") {
     testBlueSpecSim(new File(multiFolder),
       new File(multiFile),
@@ -276,7 +392,7 @@ class MainSuite extends AnyFunSuite {
     testParse(new File(multiFolder),
       new File(multiFile))
   }*/
-  
+
   test("Multiple Execution OOO WB Typecheck Test") {
     testTypecheck(new File(multiFolder),
       new File(multiFile))
