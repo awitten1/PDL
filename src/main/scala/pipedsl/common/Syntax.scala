@@ -31,7 +31,7 @@ object Syntax {
       }
     }
     sealed trait LabelAnnotation {
-      var lbl: Option[Label] = None
+      var lbl: Option[Label] = Some(LBottom)
     }
     sealed trait RecursiveAnnotation {
       var isRecursive: Boolean = true
@@ -477,7 +477,7 @@ object Syntax {
       case _ => throw new UnsupportedOperationException
     }
   }
-  
+
   case class BoolUOp(op: String) extends UOp
   case class NumUOp(op: String) extends UOp
   case class BitUOp(op: String) extends UOp
@@ -535,7 +535,7 @@ object Syntax {
       this
     }
   }
-  
+
   case class LockArg(id: Id, evar: Option[EVar]) extends Positional with LockInfoAnnotation
   sealed trait LockType extends Positional
   case object LockRead extends LockType

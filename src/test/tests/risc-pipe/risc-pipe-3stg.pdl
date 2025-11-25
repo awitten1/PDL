@@ -26,7 +26,7 @@ def alu(arg1: int<32>, arg2: int<32>, op: uint<3>, flip: bool): int<32> {
     if (op == u1<3>) { //001 == SLL
         return arg1 << shamt;
     } else {
-    if (op == u2<3>) { //010 == SLT 
+    if (op == u2<3>) { //010 == SLT
         return (arg1 < arg2) ? 1<32> : 0<32>;
     } else {
     if (op == u3<3>) { //011 == SLTU
@@ -49,7 +49,7 @@ def alu(arg1: int<32>, arg2: int<32>, op: uint<3>, flip: bool): int<32> {
     } else { //111 == AND
         return arg1 & arg2;
     }}}}}}}
-    
+
 }
 
 //true if taking branch
@@ -200,13 +200,13 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(BypassQueue), imem: int<32>[16]<a,a>(
        reserve(rf[rd], W);
     }
     end(rf);
-    bool take = br(funct3, rf1, rf2);    
+    bool take = br(funct3, rf1, rf2);
     if (isBranch) {
        //divide by 4 b/c we count instructions not bytes
        int<16> offpc = pc + (immB >> 2);
-       int<16> npc = (take) ? (offpc) : (pc + 1<16>);       
+       int<16> npc = (take) ? (offpc) : (pc + 1<16>);
     } else {
-    if (isJal) {       
+    if (isJal) {
        //divide by 4 since it counts bytes instead of insns
        int<32> npc32 = cast(pc, int<32>) + (immJ >> 2);
        int<16> npc = npc32{15:0};
@@ -237,7 +237,7 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(BypassQueue), imem: int<32>[16]<a,a>(
        rf[rd] <- rddata;
     } else {
        int<32> rddata = 0<32>;
-    }    
+    }
     if (isDiv) {
        int<32> sdividend = sign(rf1);
        //For REM, ignore sign of divisor
@@ -246,7 +246,7 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(BypassQueue), imem: int<32>[16]<a,a>(
        uint<32> dividend = (isSignedDiv) ? cast(mag(rf1), uint<32>) : cast(rf1, uint<32>);
        uint<32> divisor =  (isSignedDiv) ? cast(mag(rf2), uint<32>) : cast(rf2, uint<32>);
        bool retQuot = funct3 <= u5<3>;
-       bool invertRes <- isSignedDiv && (sdividend != sdivisor);       
+       bool invertRes <- isSignedDiv && (sdividend != sdivisor);
        uint<32> udivout <- call div(dividend, divisor, u0<32>, u0<32>, u0<5>, retQuot);
    } else {
        bool invertRes <- false;
@@ -254,7 +254,7 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(BypassQueue), imem: int<32>[16]<a,a>(
    }
    uint<32> tmpaddr = cast(alu_res, uint<32>);
    uint<16> memaddr = (tmpaddr >> 2){15:0};
-   uint<2> boff = cast(alu_res{1:0}, uint<2>);   
+   uint<2> boff = cast(alu_res{1:0}, uint<2>);
    start(dmem);
    split {
         case: (isLoad) {
@@ -278,11 +278,11 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(BypassQueue), imem: int<32>[16]<a,a>(
     print("PC: %h", pc << 2);
     print("INSN: %h", insn);
     if ((writerd) && (isLoad || isDiv)) {
-       block(rf[rd]);           
+       block(rf[rd]);
        if (isLoad) {
        	  int<32> insnout = maskLoad(wdata, funct3, boff);
        } else {
-	  int<32> divout = (invertRes) ? -(cast(udivout, int<32>)) :  cast(udivout, int<32>);  
+	  int<32> divout = (invertRes) ? -(cast(udivout, int<32>)) :  cast(udivout, int<32>);
 	  int<32> insnout = divout;
        }
        rf[rd] <- insnout;
@@ -291,7 +291,7 @@ pipe cpu(pc: int<16>)[rf: int<32>[5]<c2,s>(BypassQueue), imem: int<32>[16]<a,a>(
     }
     if (writerd) {
        print("Writing %d to r%d", insnout, rd);
-       release(rf[rd]);       
+       release(rf[rd]);
     }
     if (done) { output(true); }
 }

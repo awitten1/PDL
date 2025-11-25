@@ -86,8 +86,12 @@ circuit {
   }
 
   test("Parser test with IFC labels") {
+
+// int<32>[5] - 32 bit data, 5 bit addresses
+
     testParse("""
-pipe cpu(pc: int<8>)[rf: int<32>[5]<c4,s1>(RenameRF), imem: int<32>[8]<a1,a1>]: bool {
+
+pipe cpu(pc: int<8>)[rf: secret<int<32>>[5]<c4,s1>(RenameRF), imem: public<int<32>>[8]<a1,a1>]: bool {
      start(imem);
      int<32> insn <- imem[cast(pc, uint<8>)];
      end(imem);

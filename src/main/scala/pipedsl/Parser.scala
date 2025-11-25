@@ -7,6 +7,8 @@ import pipedsl.common.Syntax.Latency.Latency
 import pipedsl.common.Utilities.{generic_type_prefix, opt_func}
 
 import scala.util.matching.Regex
+import pipedsl.common.Security.LBottom
+import pipedsl.common.Security.LTop
 
 class Parser(rflockImpl: String) extends RegexParsers with PackratParsers {
   type P[T] = PackratParser[T]
@@ -427,7 +429,7 @@ class Parser(rflockImpl: String) extends RegexParsers with PackratParsers {
         }
 
   lazy val lockedMemory: P[Type] =
-    sizedInt ~ brackets(posint) ~
+    baseTypeWithIFC ~ brackets(posint) ~
       (angular(latsnports)
        ~ parens(iden).?).? ^^
       {
@@ -460,7 +462,18 @@ class Parser(rflockImpl: String) extends RegexParsers with PackratParsers {
   lazy val void: P[Type] = "()" ^^ { _ => TVoid() }
   lazy val bool: P[Type] = "bool".r ^^ { _ => TBool() }
   lazy val string: P[Type] = "String".r ^^ {_ => TString() }
-  lazy val baseTyp: P[Type] = lockedMemory | sizedInt | bool | string | void
+
+  lazy val baseTypeWithoutIFC: P[Type] = sizedInt | bool | string | void;
+
+  lazy val baseTypeWithSecretIFC: P[Type] = "secret" ~> angular(baseTypeWithoutIFC) ^^ { t=> t.lbl = Some(LTop); t } |
+    baseTypeWithoutIFC;
+
+  lazy val baseTypeWithPublicIFC: P[Type] = "public" ~> angular(baseTypeWithoutIFC) ^^ { t=> t.lbl = Some(LBottom); t } |
+    baseTypeWithoutIFC;
+
+  lazy val baseTypeWithIFC = baseTypeWithSecretIFC | baseTypeWithPublicIFC;
+
+  lazy val baseTyp: P[Type] = lockedMemory | baseTypeWithIFC;
 
   lazy val typ: P[Type] = "spec" ~> angular(baseTyp) ^^ { t => t.maybeSpec = true; t } |
     baseTyp
