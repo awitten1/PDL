@@ -124,7 +124,7 @@ object Syntax {
       case _: TVoid => "void"
       case _: TBool => "bool"
       case _: TString => "String"
-      case TSizedInt(l, un) => s"${if (un.unsigned()) "u" else ""}bit<$l>"
+      case TSizedInt(l, un) => s"${if (un.unsigned()) "u" else ""}bit<$l>${lbl.map(l => s"{$l}").getOrElse("")}"
       case TFun(args, ret) => s"${args.mkString("->")} -> ${ret}"
       case TRecType(n, _) => s"$n"
       case TMemType(elem, size, rLat, wLat, rPorts, wPorts) =>

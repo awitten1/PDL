@@ -672,6 +672,9 @@ object Utilities {
     {
       val ni = i.copy()
       ni.typ = f_opt(i.typ).toOptionOrThrow(LackOfConstraints(i))
+      if (i.v == "s" || i.v == "p") {
+         println(s"typeMapId(${i.v}): i.typ=${i.typ}, ni.typ=${ni.typ}")
+      }
       ni
     }
 

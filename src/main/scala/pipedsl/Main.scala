@@ -93,6 +93,7 @@ object Main {
       val canonProg2 = new CanonicalizePass().run(verifProg)
       val canonProg = new TypeInference(autocast).checkProgram(canonProg2)
       val basetypes = BaseTypeChecker.check(canonProg, None)
+      IFCTypeChecker.check(canonProg, Some(basetypes))
       FunctionConstraintChecker.check(canonProg)
       val nprog = new BindModuleTypes(basetypes).run(canonProg)
       val recvProg = SimplifyRecvPass.run(nprog)

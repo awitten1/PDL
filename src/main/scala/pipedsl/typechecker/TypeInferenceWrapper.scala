@@ -40,27 +40,27 @@ object TypeInferenceWrapper
 
   private def subst_into_type(typevar: Id, toType: Type, inType: Type): Type = inType match
   {
-   case t: TMemType => t.copy(elem = subst_into_type(typevar, toType, t.elem)).setPos(t.pos)
-   case t1@TLockedMemType(t2: TMemType, _, _) => t1.copy(t2.copy(elem = subst_into_type(typevar, toType, t2.elem))).setPos(t1.pos)
+   case t: TMemType => t.copy(elem = subst_into_type(typevar, toType, t.elem)).setPos(t.pos).copyMeta(inType)
+   case t1@TLockedMemType(t2: TMemType, _, _) => t1.copy(t2.copy(elem = subst_into_type(typevar, toType, t2.elem))).setPos(t1.pos).copyMeta(inType)
    case TSizedInt(len, signedness) =>
     val width = subst_into_type(typevar, toType, len) |> to_width
     val sign = subst_into_type(typevar, toType, signedness) |> to_sign
-    TSizedInt(width, sign).setPos(inType.pos)
+    TSizedInt(width, sign).setPos(inType.pos).copyMeta(inType)
    case TInteger() => inType
    case TString() => inType
    case TBool() => inType
    case TVoid() => inType
    case TSigned() => inType
    case TUnsigned() => inType
-   case TMaybe(btyp) => TMaybe(subst_into_type(typevar, toType, btyp))
+   case TMaybe(btyp) => TMaybe(subst_into_type(typevar, toType, btyp)).copyMeta(inType)
    case TRecType(_,_) => inType //TODO
-   case TFun(args, ret) => TFun(args.map(a => subst_into_type(typevar, toType, a)), subst_into_type(typevar, toType, ret)).setPos(inType.pos)
+   case TFun(args, ret) => TFun(args.map(a => subst_into_type(typevar, toType, a)), subst_into_type(typevar, toType, ret)).setPos(inType.pos).copyMeta(inType)
    case TNamedType(name) => if (name == typevar) toType else inType
    case TSignVar(name) => if (name == typevar) toType else inType
    case TModType(inputs, refs, retType, name) => TModType(inputs.map(i => subst_into_type(typevar, toType, i)), refs.map(r => subst_into_type(typevar, toType, r)), retType match
    { case Some(value) => Some(subst_into_type(typevar, toType, value))
     case None => None
-   }, name).setPos(inType.pos)
+   }, name).setPos(inType.pos).copyMeta(inType)
    case TObject(_, _, _) => inType //TODO support these properly once we add polymorphism
    case TRequestHandle(_, _) => inType //TODO do we ever need to sub into this?
    case t: TBitWidth => t match
@@ -73,11 +73,11 @@ object TypeInferenceWrapper
     case TBitWidthAdd(b1, b2) =>
      val w1 = subst_into_type(typevar, toType, b1) |> to_width
      val w2 = subst_into_type(typevar, toType, b2) |> to_width
-     TBitWidthAdd(w1, w2).setPos(inType.pos)
+     TBitWidthAdd(w1, w2).setPos(inType.pos).copyMeta(inType)
     case TBitWidthSub(b1, b2) =>
      val w1 = subst_into_type(typevar, toType, b1) |> to_width
      val w2 = subst_into_type(typevar, toType, b2) |> to_width
-     TBitWidthSub(w1, w2).setPos(inType.pos)
+     TBitWidthSub(w1, w2).setPos(inType.pos).copyMeta(inType)
     case TBitWidthMax(b1, b2) =>
      val t1 = TBitWidthMax(subst_into_type(typevar, toType, b1) |> to_width,
       subst_into_type(typevar, toType, b2) |> to_width)
@@ -86,10 +86,10 @@ object TypeInferenceWrapper
       case t1: TBitWidthMax =>
        (t1.b1, t1.b2) match
        {
-        case (TBitWidthLen(len), _: TBitWidthVar) => TBitWidthLen(len).setPos(inType.pos)
-        case (_: TBitWidthVar, TBitWidthLen(len)) => TBitWidthLen(len).setPos(inType.pos)
+        case (TBitWidthLen(len), _: TBitWidthVar) => TBitWidthLen(len).setPos(inType.pos).copyMeta(inType)
+        case (_: TBitWidthVar, TBitWidthLen(len)) => TBitWidthLen(len).setPos(inType.pos).copyMeta(inType)
         case (TBitWidthVar(v1), TBitWidthVar(v2)) if v1.v == v2.v => TBitWidthVar(v1)
-        case _ => t1.setPos(inType.pos)
+        case _ => t1.setPos(inType.pos).copyMeta(inType)
        }
      }
    }
@@ -128,7 +128,7 @@ object TypeInferenceWrapper
        case sz@TSizedInt(len, sign) =>
         val width = type_subst_map(len, tp_mp, templated).copyMeta(sz) |> to_width
         val sn = type_subst_map(sign, tp_mp, templated).copyMeta(sign) |> to_sign
-        sz.copy(len = width, sign = sn)
+        sz.copy(len = width, sign = sn).copyMeta(sz)
        case f@TFun(args, ret) => f.copy(args = args.map(type_subst_map(_, tp_mp, templated)), ret = type_subst_map(ret, tp_mp, templated)).copyMeta(f)
        case r@TRecType(_, fields) => r.copy(fields = fields.map(idtp => (idtp._1, type_subst_map(idtp._2, tp_mp, templated)))).copyMeta(r)
        case m: TMemType => m.copy(elem = type_subst_map(m.elem, tp_mp, templated)).copyMeta(m)
